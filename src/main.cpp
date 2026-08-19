@@ -7,7 +7,7 @@ using namespace wxHelpers;
 class DemoFrame : public wxFrame {
 public:
     DemoFrame() : wxFrame(nullptr, wxID_ANY, "wxHelpers Comprehensive Showcase", 
-                          wxDefaultPosition, wxSize(840, 660)) {
+                          wxDefaultPosition, wxSize(880, 700)) {
         
         SetupMenuBar();
         SetupShortcuts();
@@ -22,6 +22,7 @@ public:
 
         // Add Tabs
         notebook->AddPage(CreateReactiveBindingTab(notebook), "🔄 Reactive");
+        notebook->AddPage(CreateChartsAndSearchTab(notebook), "📈 Charts & Badges");
         notebook->AddPage(CreateCanvasAnimationTab(notebook), "🎨 Canvas & Tween");
         notebook->AddPage(CreateValidationTab(notebook), "✅ Validation");
         notebook->AddPage(CreateDragDropToastTab(notebook), "🍞 Toasts & DragDrop");
@@ -75,6 +76,13 @@ private:
                     } else {
                         Toast::Warning(this, "Clipboard is empty or non-text.");
                     }
+                });
+            })
+            .Menu("&Crypto", [this](Menu::MenuBuilder& m) {
+                m.Item("Generate New UUID", [this]() {
+                    wxString uuid = Crypto::GenerateUUID();
+                    Clipboard::SetText(uuid);
+                    Toast::Success(this, "Generated & Copied UUID: " + uuid);
                 });
             })
             .Menu("&Help", [this](Menu::MenuBuilder& m) {
@@ -141,7 +149,98 @@ private:
         return panel;
     }
 
-    // TAB 2: Canvas Drawing & Tween Animation
+    // TAB 2: Charts, Status Badges & Live Fuzzy Search
+    wxWindow* CreateChartsAndSearchTab(wxWindow* parent) {
+        auto* panel = new wxPanel(parent);
+
+        auto* header = Widgets::HeaderLabel(panel, "Mini Charts, Status Badges & Fuzzy Search");
+        
+        // Badges Row
+        auto* badgeSuccess = Badge::Create(panel, "ONLINE", Badge::Style::Success);
+        auto* badgeWarning = Badge::Create(panel, "HIGH LOAD", Badge::Style::Warning);
+        auto* badgeError   = Badge::Create(panel, "CRITICAL", Badge::Style::Error);
+        auto* badgeInfo    = Badge::Create(panel, "SYNCING", Badge::Style::Info);
+
+        // Charts
+        auto* sparkline = Charts::CreateSparkline(panel, {12, 18, 15, 24, 28, 35, 32, 45, 42, 58, 52, 64});
+        auto* barChart = Charts::CreateBarChart(panel, {
+            {"Mon", 45, Color::Palette::Blue500},
+            {"Tue", 68, Color::Palette::Emerald500},
+            {"Wed", 90, Color::Palette::Purple500},
+            {"Thu", 35, Color::Palette::Amber500},
+            {"Fri", 82, Color::Palette::Rose500}
+        });
+
+        // Push random data button
+        auto* pushDataBtn = Widgets::Button(panel, "⚡ Push Live Data Point", [sparkline]() {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            static std::uniform_real_distribution<double> dis(20.0, 95.0);
+            sparkline->PushValue(dis(gen));
+        });
+
+        // Search and filtered list
+        std::vector<wxString> allTasks = {
+            "Implement Modern C++ wxWidgets Library",
+            "Configure CMake & Ninja Build Pipeline",
+            "Develop Reactive Observable State",
+            "Build Double-Buffered Paint Canvas",
+            "Add Fuzzy Search and List Filtering",
+            "Add Mini Charts and Sparklines"
+        };
+
+        auto* filteredListBox = new wxListBox(panel, wxID_ANY);
+        for (const auto& t : allTasks) {
+            filteredListBox->Append(t);
+        }
+
+        auto* searchBox = SearchFilter::CreateSearchBox(panel, [filteredListBox, allTasks](const wxString& query) {
+            filteredListBox->Clear();
+            auto results = SearchFilter::Filter(allTasks, query, [](const wxString& s) { return s; }, true);
+            for (const auto& r : results) {
+                filteredListBox->Append(r);
+            }
+        }, 150, "Fuzzy search tasks...");
+
+        Layout::VBox()
+            .Add(header, 0, wxALIGN_LEFT | wxALL, 8)
+            .Add(
+                Layout::HBox()
+                    .Add(badgeSuccess, 0, wxRIGHT, 6)
+                    .Add(badgeWarning, 0, wxRIGHT, 6)
+                    .Add(badgeError, 0, wxRIGHT, 6)
+                    .Add(badgeInfo, 0, wxRIGHT, 6)
+                    .Stretch(),
+                0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8
+            )
+            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxBOTTOM, 8)
+            .Add(
+                Layout::HBox()
+                    .Add(
+                        Layout::VBox()
+                            .Add(Widgets::Label(panel, "Real-Time Sparkline:"), 0, wxBOTTOM, 4)
+                            .Add(sparkline, 0, wxEXPAND | wxBOTTOM, 6)
+                            .Add(pushDataBtn, 0, wxALIGN_LEFT),
+                        1, wxRIGHT, 8
+                    )
+                    .Add(
+                        Layout::VBox()
+                            .Add(Widgets::Label(panel, "Weekly Metrics Bar Chart:"), 0, wxBOTTOM, 4)
+                            .Add(barChart, 1, wxEXPAND),
+                        1, wxLEFT, 8
+                    ),
+                0, wxEXPAND | wxALL, 8
+            )
+            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxTOP | wxBOTTOM, 8)
+            .Add(Widgets::Label(panel, "Live Fuzzy Task Search:"), 0, wxLEFT, 8)
+            .Add(searchBox, 0, wxEXPAND | wxALL, 8)
+            .Add(filteredListBox, 1, wxEXPAND | wxALL, 8)
+            .ApplyTo(panel);
+
+        return panel;
+    }
+
+    // TAB 3: Canvas Drawing & Tween Animation
     wxWindow* CreateCanvasAnimationTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -203,7 +302,7 @@ private:
         return panel;
     }
 
-    // TAB 3: Form Live Validation
+    // TAB 4: Form Live Validation
     wxWindow* CreateValidationTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -261,7 +360,7 @@ private:
         return panel;
     }
 
-    // TAB 4: Toasts & Interactive Drag and Drop Zone
+    // TAB 5: Toasts & Interactive Drag and Drop Zone
     wxWindow* CreateDragDropToastTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -305,7 +404,7 @@ private:
         return panel;
     }
 
-    // TAB 5: TreeCtrl & Background TaskQueue
+    // TAB 6: TreeCtrl & Background TaskQueue
     wxWindow* CreateTreeAndTasksTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -319,6 +418,9 @@ private:
                 inc.AddChild("Toast.hpp");
                 inc.AddChild("DragDrop.hpp");
                 inc.AddChild("TaskQueue.hpp");
+                inc.AddChild("Charts.hpp");
+                inc.AddChild("Badge.hpp");
+                inc.AddChild("SearchFilter.hpp");
             })
             .AddChild("src", [](Tree::NodeBuilder& src) {
                 src.AddChild("main.cpp");
@@ -366,7 +468,7 @@ private:
         return panel;
     }
 
-    // TAB 6: List View & Context Menu
+    // TAB 7: List View & Context Menu
     wxWindow* CreateListViewTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -427,7 +529,7 @@ private:
         return panel;
     }
 
-    // TAB 7: System, Paths & Dialogs
+    // TAB 8: System, Paths & Dialogs
     wxWindow* CreateSystemDialogsTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 

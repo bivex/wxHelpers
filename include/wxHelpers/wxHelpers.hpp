@@ -25,3 +25,7 @@
 #include "Toast.hpp"
 #include "Tree.hpp"
 #include "TaskQueue.hpp"
+#include "Crypto.hpp"
+#include "SearchFilter.hpp"
+#include "Badge.hpp"
+#include "Charts.hpp"
