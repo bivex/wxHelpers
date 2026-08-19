@@ -7,17 +7,23 @@ using namespace wxHelpers;
 class DemoFrame : public wxFrame {
 public:
     DemoFrame() : wxFrame(nullptr, wxID_ANY, "wxHelpers Comprehensive Showcase", 
-                          wxDefaultPosition, wxSize(750, 580)) {
+                          wxDefaultPosition, wxSize(800, 620)) {
         
         SetupMenuBar();
+        SetupShortcuts();
         CreateStatusBar(2);
-        SetStatusText("Ready", 0);
-        SetStatusText("Modern C++ & wxWidgets", 1);
+        SetStatusText("Ready (Press F5 or Ctrl+O to test hotkeys)", 0);
+        SetStatusText("Modern C++17 & wxWidgets 3.3", 1);
+
+        // Restore window dimensions if previously saved
+        Config::RestoreWindowState(this, "MainWindow");
 
         auto* notebook = new wxNotebook(this, wxID_ANY);
 
         // Add Tabs
-        notebook->AddPage(CreateReactiveBindingTab(notebook), "🔄 Reactive Binding");
+        notebook->AddPage(CreateReactiveBindingTab(notebook), "🔄 Reactive");
+        notebook->AddPage(CreateCanvasAnimationTab(notebook), "🎨 Canvas & Tween");
+        notebook->AddPage(CreateValidationTab(notebook), "✅ Validation");
         notebook->AddPage(CreateAsyncTimersTab(notebook), "⚡ Async & Timers");
         notebook->AddPage(CreateListViewTab(notebook), "📊 List & Context Menu");
         notebook->AddPage(CreateSystemDialogsTab(notebook), "🛠️ System & Dialogs");
@@ -25,9 +31,22 @@ public:
         Layout::VBox()
             .Add(notebook, 1, wxEXPAND | wxALL, 6)
             .ApplyTo(this);
+
+        Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& evt) {
+            Config::SaveWindowState(this, "MainWindow");
+            evt.Skip();
+        });
     }
 
 private:
+    void SetupShortcuts() {
+        // F5 shortcut to refresh status
+        Hotkeys::Bind(this, WXK_F5, [this]() {
+            SetStatusText("F5 Pressed! Refresh triggered.", 0);
+            System::Beep();
+        });
+    }
+
     void SetupMenuBar() {
         Menu::Bar()
             .Menu("&File", [this](Menu::MenuBuilder& m) {
@@ -63,7 +82,7 @@ private:
                 })
                 .Separator()
                 .Item("&About", [this]() {
-                    Dialogs::ShowInfo(this, "wxHelpers Demo v1.0\nModern C++ helpers for wxWidgets\nBuilt with CMake & Ninja.");
+                    Dialogs::ShowInfo(this, "wxHelpers Showcase v1.0\nModern C++ helpers for wxWidgets\nBuilt with CMake & Ninja.");
                 });
             })
             .ApplyTo(this);
@@ -76,13 +95,11 @@ private:
         auto* header = Widgets::HeaderLabel(panel, "Two-Way Data Binding (Observable<T>)");
         auto* desc = Widgets::Label(panel, "Changes in controls automatically sync with Observable state and update other bound UI elements.");
 
-        // Text binding
         auto* txtInput = Widgets::TextInput(panel, "", "Type message here...");
         auto* txtBoundLabel = Widgets::HeaderLabel(panel, "Waiting for text...", 12);
         Binding::BindText(m_boundText, txtInput);
         Binding::BindLabel(m_boundText, txtBoundLabel);
 
-        // Slider binding
         auto* slider = Widgets::Slider(panel, 50, 0, 100);
         auto* sliderValLabel = Widgets::Label(panel, "Slider Value: 50%");
         Binding::BindSlider(m_boundNumber, slider);
@@ -90,7 +107,6 @@ private:
             sliderValLabel->SetLabel(wxString::Format("Slider Value: %d%%", newVal));
         });
 
-        // Checkbox binding
         auto* checkbox = Widgets::CheckBox(panel, "Enable Turbo Mode", false);
         auto* checkStatus = Widgets::Label(panel, "Status: Normal Mode");
         Binding::BindCheck(m_boundFlag, checkbox);
@@ -98,7 +114,6 @@ private:
             checkStatus->SetLabel(enabled ? "Status: 🚀 TURBO MODE ENABLED" : "Status: Normal Mode");
         });
 
-        // Direct programmatic mutation button
         auto* mutateBtn = Widgets::Button(panel, "Set Values Programmatically", [this]() {
             m_boundText.Set("Programmatically changed!");
             m_boundNumber.Set(85);
@@ -124,7 +139,130 @@ private:
         return panel;
     }
 
-    // TAB 2: Async Background Worker & Modern Timers
+    // TAB 2: Canvas Drawing & Tween Animation
+    wxWindow* CreateCanvasAnimationTab(wxWindow* parent) {
+        auto* panel = new wxPanel(parent);
+
+        auto* header = Widgets::HeaderLabel(panel, "Interactive Double-Buffered Canvas & Tween Animation");
+        auto* desc = Widgets::Label(panel, "Click/Drag on the canvas or press Animate to trigger smooth easing transitions.");
+
+        auto* canvas = Canvas::Create(panel, wxSize(400, 220));
+        
+        canvas->OnPaint([this](wxDC& dc, const wxSize& size) {
+            // Draw background gradient
+            Canvas::Draw::GradientRect(dc, wxRect(0, 0, size.x, size.y), 
+                                       Color::Palette::Slate900, Color::Palette::Slate800);
+
+            // Draw animated pill box
+            int boxWidth = static_cast<int>(m_animProgress * (size.x - 60));
+            wxRect cardRect(30, 40, std::max(60, boxWidth), 60);
+            Canvas::Draw::RoundedRect(dc, cardRect, 12, Color::Palette::Blue500, Color::Palette::Slate200);
+            Canvas::Draw::CenteredText(dc, wxString::Format("Tween Progress: %d%%", static_cast<int>(m_animProgress * 100)),
+                                       cardRect, *wxWHITE, 11, true);
+
+            // Draw interactive mouse circle
+            dc.SetBrush(wxBrush(Color::Palette::Emerald500));
+            dc.SetPen(wxPen(*wxWHITE, 2));
+            dc.DrawCircle(m_mousePos, 14);
+        });
+
+        canvas->OnMouseMove([this, canvas](const wxPoint& pos, wxMouseEvent&) {
+            m_mousePos = pos;
+            canvas->Redraw();
+        });
+
+        auto* btnAnimate = Widgets::Button(panel, "▶️ Run EaseOutBounce Animation", [this, canvas]() {
+            Animation::Animate(0.1, 1.0, 1000, Animation::Easing::EaseOutBounce,
+                [this, canvas](double val) {
+                    m_animProgress = val;
+                    canvas->Redraw();
+                }
+            );
+        });
+
+        auto* btnElastic = Widgets::Button(panel, "▶️ Run EaseInOut Animation", [this, canvas]() {
+            Animation::Animate(1.0, 0.1, 800, Animation::Easing::EaseInOutQuad,
+                [this, canvas](double val) {
+                    m_animProgress = val;
+                    canvas->Redraw();
+                }
+            );
+        });
+
+        Layout::VBox()
+            .Add(header, 0, wxALIGN_LEFT | wxALL, 8)
+            .Add(desc, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, 8)
+            .Add(canvas, 1, wxEXPAND | wxALL, 8)
+            .Add(
+                Layout::HBox()
+                    .Add(btnAnimate, 1, wxRIGHT, 5)
+                    .Add(btnElastic, 1, wxLEFT, 5),
+                0, wxEXPAND | wxALL, 8
+            )
+            .ApplyTo(panel);
+
+        return panel;
+    }
+
+    // TAB 3: Form Live Validation
+    wxWindow* CreateValidationTab(wxWindow* parent) {
+        auto* panel = new wxPanel(parent);
+
+        auto* header = Widgets::HeaderLabel(panel, "Form Input Validation");
+        auto* desc = Widgets::Label(panel, "Real-time field validation with custom rules and error messages.");
+
+        auto* emailInput = Widgets::TextInput(panel, "", "e.g. user@example.com");
+        auto* emailErr = Widgets::Label(panel, "");
+
+        auto* passwordInput = Widgets::TextInput(panel, "", "At least 6 characters...", wxTE_PASSWORD);
+        auto* passwordErr = Widgets::Label(panel, "");
+
+        auto* ageInput = Widgets::TextInput(panel, "", "e.g. 25");
+        auto* ageErr = Widgets::Label(panel, "");
+
+        auto validator = Validation::CreateFormValidator()
+            .AddField(emailInput, emailErr, {
+                Validation::NotEmpty("Email is required."),
+                Validation::Email("Must be a valid email format.")
+            })
+            .AddField(passwordInput, passwordErr, {
+                Validation::NotEmpty("Password cannot be empty."),
+                Validation::MinLength(6, "Password must be at least 6 characters.")
+            })
+            .AddField(ageInput, ageErr, {
+                Validation::NotEmpty("Age is required."),
+                Validation::Numeric("Age must be numeric.")
+            });
+
+        auto* submitBtn = Widgets::Button(panel, "Submit Form", [this, validator]() mutable {
+            if (validator.ValidateAll()) {
+                Dialogs::ShowInfo(this, "Form is valid! Proceeding with submission.", "Success");
+            } else {
+                Dialogs::ShowWarning(this, "Please fix highlighted validation errors.", "Validation Failed");
+            }
+        });
+
+        Layout::VBox()
+            .Add(header, 0, wxALIGN_LEFT | wxALL, 8)
+            .Add(desc, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, 8)
+            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxBOTTOM, 12)
+            .Add(Widgets::Label(panel, "Email Address:"), 0, wxLEFT, 8)
+            .Add(emailInput, 0, wxEXPAND | wxALL, 8)
+            .Add(emailErr, 0, wxLEFT | wxBOTTOM, 8)
+            .Add(Widgets::Label(panel, "Password:"), 0, wxLEFT, 8)
+            .Add(passwordInput, 0, wxEXPAND | wxALL, 8)
+            .Add(passwordErr, 0, wxLEFT | wxBOTTOM, 8)
+            .Add(Widgets::Label(panel, "Age:"), 0, wxLEFT, 8)
+            .Add(ageInput, 0, wxEXPAND | wxALL, 8)
+            .Add(ageErr, 0, wxLEFT | wxBOTTOM, 8)
+            .Add(submitBtn, 0, wxALIGN_LEFT | wxALL, 8)
+            .Stretch()
+            .ApplyTo(panel);
+
+        return panel;
+    }
+
+    // TAB 4: Async Background Worker & Modern Timers
     wxWindow* CreateAsyncTimersTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -132,18 +270,15 @@ private:
         auto* statusLabel = Widgets::Label(panel, "Async status: Idle");
         auto* progressBar = Widgets::ProgressBar(panel, 100);
 
-        // Async Background Execution
-        auto* startAsyncBtn = Widgets::Button(panel, "Run Background Compute (3s)", [this, statusLabel, progressBar]() {
+        auto* startAsyncBtn = Widgets::Button(panel, "Run Background Compute (2s)", [this, statusLabel, progressBar]() {
             statusLabel->SetLabel("⏳ Running heavy computation on std::thread...");
             progressBar->Pulse();
 
             Events::AsyncRun(
-                // Background worker (non-blocking)
                 []() -> wxString {
-                    std::this_thread::sleep_for(std::chrono::seconds(3));
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
                     return "Calculation result: 9,876,543 operations completed.";
                 },
-                // UI Thread callback
                 [this, statusLabel, progressBar](wxString result) {
                     progressBar->SetValue(100);
                     statusLabel->SetLabel(result);
@@ -152,7 +287,6 @@ private:
             );
         });
 
-        // Interval Timer
         auto* timerLabel = Widgets::HeaderLabel(panel, "Timer Counter: 0", 13);
         auto* toggleTimerBtn = Widgets::Button(panel, "Start Interval Timer");
 
@@ -169,7 +303,6 @@ private:
             }
         });
 
-        // Debounced Search Input
         auto* debouncedLabel = Widgets::Label(panel, "Debounced search query: [none]");
         auto debouncedHandler = Timer::Debounce<wxString>(400, [debouncedLabel](wxString query) {
             debouncedLabel->SetLabel("Debounced query (delayed 400ms): " + query);
@@ -199,7 +332,7 @@ private:
         return panel;
     }
 
-    // TAB 3: List View & Context Menu
+    // TAB 5: List View & Context Menu
     wxWindow* CreateListViewTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -224,7 +357,6 @@ private:
 
         auto* listCtrl = listBuilder.GetListCtrl();
 
-        // Right-click Context Menu
         listCtrl->Bind(wxEVT_CONTEXT_MENU, [this, panel, listCtrl, listBuilder](wxContextMenuEvent& evt) {
             long sel = listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
             Menu::Context()
@@ -260,7 +392,7 @@ private:
         return panel;
     }
 
-    // TAB 4: System, Paths & Dialogs
+    // TAB 6: System, Paths & Dialogs
     wxWindow* CreateSystemDialogsTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -309,6 +441,10 @@ private:
     Observable<wxString> m_boundText{"Hello from Observable!"};
     Observable<int> m_boundNumber{50};
     Observable<bool> m_boundFlag{false};
+
+    // Canvas & Animation State
+    double m_animProgress = 0.6;
+    wxPoint m_mousePos{100, 100};
 
     // Timer State
     std::shared_ptr<Timer::IntervalHandle> m_interval;
