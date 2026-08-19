@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(wxSimpleApp VERSION 1.0.0 LANGUAGES CXX)
+project(wxHelpersProject VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,25 +9,32 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(wxWidgets REQUIRED COMPONENTS core base)
 include(${wxWidgets_USE_FILE})
 
-# Source files
+# wxHelpers Interface / Header Library
+add_library(wxHelpers INTERFACE)
+target_include_directories(wxHelpers INTERFACE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(wxHelpers INTERFACE 
+    ${wxWidgets_LIBRARIES}
+)
+
+# Demo / Example Executable
 set(SOURCES
     src/main.cpp
 )
 
-# Define executable (macOS bundle for GUI apps on macOS, WIN32 for Windows)
 if(APPLE)
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE_BUNDLE_NAME "wxSimpleApp"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.wxsimpleapp"
+    add_executable(wxDemoApp MACOSX_BUNDLE ${SOURCES})
+    set_target_properties(wxDemoApp PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME "wxDemoApp"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.wxdemoapp"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     )
 elseif(WIN32)
-    add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
+    add_executable(wxDemoApp WIN32 ${SOURCES})
 else()
-    add_executable(${PROJECT_NAME} ${SOURCES})
+    add_executable(wxDemoApp ${SOURCES})
 endif()
 
-# Link wxWidgets libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
+target_link_libraries(wxDemoApp PRIVATE wxHelpers)

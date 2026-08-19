@@ -1,71 +1,106 @@
 #include <wx/wx.h>
+#include "wxHelpers/wxHelpers.hpp"
 
-class MainFrame : public wxFrame {
+using namespace wxHelpers;
+
+class DemoFrame : public wxFrame {
 public:
-    MainFrame(const wxString& title)
-        : wxFrame(nullptr, wxID_ANY, title, wxDefaultPosition, wxSize(450, 300)) {
+    DemoFrame() : wxFrame(nullptr, wxID_ANY, "wxWidgets with wxHelpers Library", 
+                          wxDefaultPosition, wxSize(640, 520)) {
         
-        // Menu setup
-        auto* menuFile = new wxMenu;
-        menuFile->Append(wxID_EXIT, "E&xit\tCtrl-Q", "Exit the application");
-
-        auto* menuHelp = new wxMenu;
-        menuHelp->Append(wxID_ABOUT, "&About\tF1", "Show about dialog");
-
-        auto* menuBar = new wxMenuBar;
-        menuBar->Append(menuFile, "&File");
-        menuBar->Append(menuHelp, "&Help");
-        SetMenuBar(menuBar);
-
-        // Status bar
         CreateStatusBar();
-        SetStatusText("Welcome to wxWidgets!");
+        SetStatusText("Ready");
 
-        // Panel and Layout
-        auto* panel = new wxPanel(this, wxID_ANY);
-        auto* sizer = new wxBoxSizer(wxVERTICAL);
+        auto* panel = new wxPanel(this);
 
-        auto* text = new wxStaticText(panel, wxID_ANY, "Hello, wxWidgets with CMake & Ninja!", 
-                                     wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
-        auto font = text->GetFont();
-        font.SetPointSize(14);
-        font.SetWeight(wxFONTWEIGHT_BOLD);
-        text->SetFont(font);
+        // Header and description
+        auto* header = Widgets::HeaderLabel(panel, "🚀 wxHelpers Showcase");
+        auto* statusLabel = Widgets::Label(panel, "Interactive Modern wxWidgets helpers demo.");
 
-        auto* button = new wxButton(panel, wxID_ANY, "Click Me");
+        // Text input with instant reactive update
+        auto* nameInput = Widgets::TextInput(panel, "", "Type something here...", 0, 
+            [this](const wxString& val) {
+                SetStatusText(val.empty() ? "Waiting for input..." : "Typing: " + val);
+            });
 
-        sizer->AddStretchSpacer();
-        sizer->Add(text, 0, wxALIGN_CENTER | wxALL, 10);
-        sizer->Add(button, 0, wxALIGN_CENTER | wxALL, 10);
-        sizer->AddStretchSpacer();
+        // Interactive Button with Dialogs
+        auto* dialogBtn = Widgets::Button(panel, "📁 Pick a File", [this, panel]() {
+            if (auto file = Dialogs::PickOpenFile(this, "Select any file"); file) {
+                Dialogs::ShowInfo(this, "Selected file:\n" + *file, "File Chosen");
+            }
+        });
 
-        panel->SetSizer(sizer);
+        // Prompt Dialog Button
+        auto* promptBtn = Widgets::Button(panel, "✏️ Prompt Text", [this]() {
+            if (auto res = Dialogs::PromptText(this, "Enter your name:", "User Input", "Developer"); res) {
+                Dialogs::ShowInfo(this, "Hello, " + *res + "!", "Welcome");
+            }
+        });
 
-        // Event bindings
-        Bind(wxEVT_MENU, &MainFrame::OnAbout, this, wxID_ABOUT);
-        Bind(wxEVT_MENU, &MainFrame::OnExit, this, wxID_EXIT);
-        button->Bind(wxEVT_BUTTON, &MainFrame::OnButtonClicked, this);
-    }
+        // Async Background Worker Demonstration
+        auto* asyncBtn = Widgets::Button(panel, "⚡ Run Async Task (2s)", [this, statusLabel]() {
+            statusLabel->SetLabel("⏳ Running background computation in thread...");
+            
+            Events::AsyncRun(
+                // Background worker thread
+                []() -> wxString {
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    return "Computation completed successfully from background thread!";
+                },
+                // UI Thread callback
+                [this, statusLabel](wxString result) {
+                    statusLabel->SetLabel(result);
+                    SetStatusText("Async task finished");
+                    Dialogs::ShowInfo(this, result, "Task Complete");
+                }
+            );
+        });
 
-private:
-    void OnButtonClicked(wxCommandEvent& event) {
-        wxMessageBox("Button was clicked!", "Notification", wxOK | wxICON_INFORMATION, this);
-    }
+        // ComboBox & CheckBox
+        auto* dropdown = Widgets::ComboBox(panel, {"Option 1 (Fast)", "Option 2 (Balanced)", "Option 3 (Extreme)"}, 0,
+            [this](int idx, const wxString& text) {
+                SetStatusText("Selected dropdown option: " + text);
+            });
 
-    void OnAbout(wxCommandEvent& event) {
-        wxMessageBox("Simple wxWidgets application built with CMake and Ninja.",
-                     "About wxSimpleApp", wxOK | wxICON_INFORMATION, this);
-    }
+        auto* checkbox = Widgets::CheckBox(panel, "Enable feature flag", true,
+            [this](bool isChecked) {
+                SetStatusText(isChecked ? "Feature flag: ENABLED" : "Feature flag: DISABLED");
+            });
 
-    void OnExit(wxCommandEvent& event) {
-        Close(true);
+        // Slider
+        auto* slider = Widgets::Slider(panel, 50, 0, 100, [this](int val) {
+            SetStatusText(wxString::Format("Slider value: %d%%", val));
+        });
+
+        // Fluent Layout Composition
+        Layout::VBox()
+            .Add(header, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 12)
+            .Add(statusLabel, 0, wxALIGN_CENTER | wxBOTTOM, 10)
+            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 15)
+            .Add(nameInput, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10)
+            .Add(
+                Layout::HBox()
+                    .Add(dialogBtn, 1, wxRIGHT, 5)
+                    .Add(promptBtn, 1, wxLEFT | wxRIGHT, 5)
+                    .Add(asyncBtn, 1, wxLEFT, 5),
+                0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10
+            )
+            .Add(
+                Layout::HBox()
+                    .Add(dropdown, 1, wxRIGHT, 10)
+                    .Add(checkbox, 0, wxALIGN_CENTER_VERTICAL),
+                0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10
+            )
+            .Add(slider, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10)
+            .Stretch()
+            .ApplyTo(panel);
     }
 };
 
 class App : public wxApp {
 public:
     bool OnInit() override {
-        auto* frame = new MainFrame("wxWidgets Simple App");
+        auto* frame = new DemoFrame();
         frame->Center();
         frame->Show(true);
         return true;
