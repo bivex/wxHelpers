@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/timer.h>
+#include <wx/app.h>
 #include <functional>
 #include <chrono>
 #include <cmath>
@@ -10,7 +11,6 @@
 
 namespace wxHelpers::Animation {
 
-// Easing function type
 using EasingFunc = std::function<double(double t)>;
 
 namespace Easing {
@@ -73,7 +73,11 @@ public:
             if (m_onComplete) {
                 m_onComplete();
             }
-            delete this;
+            if (wxTheApp) {
+                wxTheApp->CallAfter([this]() {
+                    delete this;
+                });
+            }
         }
     }
 
@@ -87,7 +91,6 @@ private:
     std::chrono::steady_clock::time_point m_startTime;
 };
 
-// Start a smooth tween animation
 inline void Animate(double from, double to, int durationMs,
                     EasingFunc easing,
                     std::function<void(double)> onUpdate,

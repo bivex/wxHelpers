@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wx/wx.h>
+#include <wx/app.h>
 #include <wx/button.h>
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
@@ -15,7 +16,7 @@ namespace wxHelpers::Events {
 // Main thread dispatch
 template <typename F>
 inline void RunOnUIThread(F&& func) {
-    if (wxTheApp) {
+    if (wxTheApp && wxTheApp->IsMainLoopRunning()) {
         wxTheApp->CallAfter(std::forward<F>(func));
     }
 }

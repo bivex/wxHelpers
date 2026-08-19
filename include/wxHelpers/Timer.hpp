@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/timer.h>
+#include <wx/app.h>
 #include <functional>
 #include <memory>
 #include <chrono>
@@ -19,7 +20,12 @@ public:
             m_callback();
         }
         if (m_oneShot) {
-            delete this;
+            Stop();
+            if (wxTheApp) {
+                wxTheApp->CallAfter([this]() {
+                    delete this;
+                });
+            }
         }
     }
 
@@ -33,7 +39,16 @@ public:
     explicit IntervalHandle(wxTimer* timer) : m_timer(timer) {}
     ~IntervalHandle() {
         Stop();
-        delete m_timer;
+        if (m_timer) {
+            if (wxTheApp) {
+                wxTheApp->CallAfter([t = m_timer]() {
+                    delete t;
+                });
+            } else {
+                delete m_timer;
+            }
+            m_timer = nullptr;
+        }
     }
 
     void Stop() {
@@ -82,7 +97,11 @@ inline auto Debounce(int delayMs, Fn&& fn) {
     return [delayMs, func, timer](Args... args) mutable {
         if (*timer) {
             (*timer)->Stop();
-            delete *timer;
+            if (wxTheApp) {
+                wxTheApp->CallAfter([t = *timer]() {
+                    delete t;
+                });
+            }
             *timer = nullptr;
         }
         

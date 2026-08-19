@@ -42,7 +42,6 @@ public:
         subMenuConfig(sub);
         m_menu->AppendSubMenu(sub.GetMenu(), title);
         
-        // Merge actions from submenu
         m_actions.insert(m_actions.end(), sub.m_actions.begin(), sub.m_actions.end());
         m_toggleActions.insert(m_toggleActions.end(), sub.m_toggleActions.begin(), sub.m_toggleActions.end());
         return *this;
@@ -73,7 +72,11 @@ public:
     void ShowAsContextMenu(wxWindow* window, const wxPoint& pos = wxDefaultPosition) {
         if (!window) return;
         BindTo(window);
-        window->PopupMenu(m_menu, pos);
+        wxPoint clientPos = pos;
+        if (pos != wxDefaultPosition) {
+            clientPos = window->ScreenToClient(pos);
+        }
+        window->PopupMenu(m_menu, clientPos);
     }
 
     wxMenu* GetMenu() const { return m_menu; }

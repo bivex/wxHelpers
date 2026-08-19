@@ -3,6 +3,7 @@
 #include <wx/wx.h>
 #include <wx/stattext.h>
 #include <wx/panel.h>
+#include <wx/weakref.h>
 #include "Color.hpp"
 #include "Timer.hpp"
 #include "Animation.hpp"
@@ -79,10 +80,13 @@ public:
             Dismiss();
         });
 
-        // Auto dismiss after duration
+        // Auto dismiss after duration with weak reference safeguard
         if (durationMs > 0) {
-            Timer::SetTimeout(durationMs, [this]() {
-                Dismiss();
+            wxWeakRef<ToastPopup> weakThis(this);
+            Timer::SetTimeout(durationMs, [weakThis]() {
+                if (weakThis) {
+                    weakThis->Dismiss();
+                }
             });
         }
 
@@ -94,14 +98,18 @@ public:
         if (m_dismissed) return;
         m_dismissed = true;
         
-        // Slide out animation
+        wxWeakRef<ToastPopup> weakThis(this);
         wxPoint startPos = GetPosition();
         Animation::Animate(0.0, 1.0, 200, Animation::Easing::EaseInQuad,
-            [this, startPos](double progress) {
-                SetPosition(wxPoint(startPos.x, static_cast<int>(startPos.y - progress * 40)));
+            [weakThis, startPos](double progress) {
+                if (weakThis) {
+                    weakThis->SetPosition(wxPoint(startPos.x, static_cast<int>(startPos.y - progress * 40)));
+                }
             },
-            [this]() {
-                Destroy();
+            [weakThis]() {
+                if (weakThis) {
+                    weakThis->Destroy();
+                }
             }
         );
     }
