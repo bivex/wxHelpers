@@ -20,3 +20,8 @@
 #include "Validation.hpp"
 #include "Canvas.hpp"
 #include "Config.hpp"
+#include "DragDrop.hpp"
+#include "Image.hpp"
+#include "Toast.hpp"
+#include "Tree.hpp"
+#include "TaskQueue.hpp"

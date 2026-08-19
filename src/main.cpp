@@ -7,7 +7,7 @@ using namespace wxHelpers;
 class DemoFrame : public wxFrame {
 public:
     DemoFrame() : wxFrame(nullptr, wxID_ANY, "wxHelpers Comprehensive Showcase", 
-                          wxDefaultPosition, wxSize(800, 620)) {
+                          wxDefaultPosition, wxSize(840, 660)) {
         
         SetupMenuBar();
         SetupShortcuts();
@@ -24,8 +24,9 @@ public:
         notebook->AddPage(CreateReactiveBindingTab(notebook), "🔄 Reactive");
         notebook->AddPage(CreateCanvasAnimationTab(notebook), "🎨 Canvas & Tween");
         notebook->AddPage(CreateValidationTab(notebook), "✅ Validation");
-        notebook->AddPage(CreateAsyncTimersTab(notebook), "⚡ Async & Timers");
-        notebook->AddPage(CreateListViewTab(notebook), "📊 List & Context Menu");
+        notebook->AddPage(CreateDragDropToastTab(notebook), "🍞 Toasts & DragDrop");
+        notebook->AddPage(CreateTreeAndTasksTab(notebook), "🌳 Tree & TaskQueue");
+        notebook->AddPage(CreateListViewTab(notebook), "📊 List View");
         notebook->AddPage(CreateSystemDialogsTab(notebook), "🛠️ System & Dialogs");
 
         Layout::VBox()
@@ -40,9 +41,9 @@ public:
 
 private:
     void SetupShortcuts() {
-        // F5 shortcut to refresh status
         Hotkeys::Bind(this, WXK_F5, [this]() {
             SetStatusText("F5 Pressed! Refresh triggered.", 0);
+            Toast::Info(this, "Refreshed via F5 Shortcut!");
             System::Beep();
         });
     }
@@ -52,12 +53,12 @@ private:
             .Menu("&File", [this](Menu::MenuBuilder& m) {
                 m.Item("&Open File...\tCtrl+O", [this]() {
                     if (auto path = Dialogs::PickOpenFile(this); path) {
-                        Dialogs::ShowInfo(this, "Opened: " + *path);
+                        Toast::Success(this, "Opened: " + *path);
                     }
                 })
                 .Item("&Save As...\tCtrl+S", [this]() {
                     if (auto path = Dialogs::PickSaveFile(this); path) {
-                        Dialogs::ShowInfo(this, "Saved: " + *path);
+                        Toast::Success(this, "Saved: " + *path);
                     }
                 })
                 .Separator()
@@ -66,13 +67,13 @@ private:
             .Menu("&Edit", [this](Menu::MenuBuilder& m) {
                 m.Item("Copy Sample to Clipboard\tCtrl+C", [this]() {
                     Clipboard::SetText("Copied from wxHelpers Demo!");
-                    SetStatusText("Copied text to clipboard!", 0);
+                    Toast::Info(this, "Text copied to clipboard!");
                 })
                 .Item("Paste from Clipboard\tCtrl+V", [this]() {
                     if (auto txt = Clipboard::GetText(); txt) {
                         Dialogs::ShowInfo(this, "Clipboard content:\n" + *txt);
                     } else {
-                        Dialogs::ShowWarning(this, "Clipboard is empty or contains non-text.");
+                        Toast::Warning(this, "Clipboard is empty or non-text.");
                     }
                 });
             })
@@ -118,6 +119,7 @@ private:
             m_boundText.Set("Programmatically changed!");
             m_boundNumber.Set(85);
             m_boundFlag.Set(true);
+            Toast::Success(this, "State updated programmatically!");
         });
 
         Layout::VBox()
@@ -149,18 +151,18 @@ private:
         auto* canvas = Canvas::Create(panel, wxSize(400, 220));
         
         canvas->OnPaint([this](wxDC& dc, const wxSize& size) {
-            // Draw background gradient
+            // Background gradient
             Canvas::Draw::GradientRect(dc, wxRect(0, 0, size.x, size.y), 
                                        Color::Palette::Slate900, Color::Palette::Slate800);
 
-            // Draw animated pill box
+            // Animated pill box
             int boxWidth = static_cast<int>(m_animProgress * (size.x - 60));
             wxRect cardRect(30, 40, std::max(60, boxWidth), 60);
             Canvas::Draw::RoundedRect(dc, cardRect, 12, Color::Palette::Blue500, Color::Palette::Slate200);
             Canvas::Draw::CenteredText(dc, wxString::Format("Tween Progress: %d%%", static_cast<int>(m_animProgress * 100)),
                                        cardRect, *wxWHITE, 11, true);
 
-            // Draw interactive mouse circle
+            // Interactive mouse circle
             dc.SetBrush(wxBrush(Color::Palette::Emerald500));
             dc.SetPen(wxPen(*wxWHITE, 2));
             dc.DrawCircle(m_mousePos, 14);
@@ -171,7 +173,7 @@ private:
             canvas->Redraw();
         });
 
-        auto* btnAnimate = Widgets::Button(panel, "▶️ Run EaseOutBounce Animation", [this, canvas]() {
+        auto* btnAnimate = Widgets::Button(panel, "▶️ EaseOutBounce Animation", [this, canvas]() {
             Animation::Animate(0.1, 1.0, 1000, Animation::Easing::EaseOutBounce,
                 [this, canvas](double val) {
                     m_animProgress = val;
@@ -180,7 +182,7 @@ private:
             );
         });
 
-        auto* btnElastic = Widgets::Button(panel, "▶️ Run EaseInOut Animation", [this, canvas]() {
+        auto* btnElastic = Widgets::Button(panel, "▶️ EaseInOut Animation", [this, canvas]() {
             Animation::Animate(1.0, 0.1, 800, Animation::Easing::EaseInOutQuad,
                 [this, canvas](double val) {
                     m_animProgress = val;
@@ -236,9 +238,9 @@ private:
 
         auto* submitBtn = Widgets::Button(panel, "Submit Form", [this, validator]() mutable {
             if (validator.ValidateAll()) {
-                Dialogs::ShowInfo(this, "Form is valid! Proceeding with submission.", "Success");
+                Toast::Success(this, "Form is valid! Submitted successfully.");
             } else {
-                Dialogs::ShowWarning(this, "Please fix highlighted validation errors.", "Validation Failed");
+                Toast::Error(this, "Please fix the validation errors!");
             }
         });
 
@@ -262,77 +264,117 @@ private:
         return panel;
     }
 
-    // TAB 4: Async Background Worker & Modern Timers
-    wxWindow* CreateAsyncTimersTab(wxWindow* parent) {
+    // TAB 4: Toasts & Drag and Drop
+    wxWindow* CreateDragDropToastTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
-        auto* header = Widgets::HeaderLabel(panel, "Asynchronous Workers & Lambda Timers");
-        auto* statusLabel = Widgets::Label(panel, "Async status: Idle");
-        auto* progressBar = Widgets::ProgressBar(panel, 100);
-
-        auto* startAsyncBtn = Widgets::Button(panel, "Run Background Compute (2s)", [this, statusLabel, progressBar]() {
-            statusLabel->SetLabel("⏳ Running heavy computation on std::thread...");
-            progressBar->Pulse();
-
-            Events::AsyncRun(
-                []() -> wxString {
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
-                    return "Calculation result: 9,876,543 operations completed.";
-                },
-                [this, statusLabel, progressBar](wxString result) {
-                    progressBar->SetValue(100);
-                    statusLabel->SetLabel(result);
-                    Dialogs::ShowInfo(this, result, "Calculation Complete");
-                }
-            );
+        auto* header = Widgets::HeaderLabel(panel, "In-App Floating Toasts & Drag-and-Drop");
+        
+        // Toast Buttons
+        auto* btnInfo = Widgets::Button(panel, "ℹ️ Info Toast", [this]() {
+            Toast::Info(this, "This is an informational toast!");
+        });
+        auto* btnSuccess = Widgets::Button(panel, "✅ Success Toast", [this]() {
+            Toast::Success(this, "Operation completed smoothly!");
+        });
+        auto* btnWarn = Widgets::Button(panel, "⚠️ Warning Toast", [this]() {
+            Toast::Warning(this, "Check your network settings!");
+        });
+        auto* btnErr = Widgets::Button(panel, "❌ Error Toast", [this]() {
+            Toast::Error(this, "Critical error encountered!");
         });
 
-        auto* timerLabel = Widgets::HeaderLabel(panel, "Timer Counter: 0", 13);
-        auto* toggleTimerBtn = Widgets::Button(panel, "Start Interval Timer");
-
-        Events::OnClick(toggleTimerBtn, [this, toggleTimerBtn, timerLabel]() {
-            if (m_interval && m_interval->IsRunning()) {
-                m_interval->Stop();
-                toggleTimerBtn->SetLabel("Start Interval Timer");
-            } else {
-                m_interval = Timer::SetInterval(500, [this, timerLabel]() {
-                    m_timerTicks++;
-                    timerLabel->SetLabel(wxString::Format("Timer Counter: %d (every 500ms)", m_timerTicks));
-                });
-                toggleTimerBtn->SetLabel("Stop Interval Timer");
+        // Drag and Drop Zone
+        auto* dropZone = Widgets::TextArea(panel, "📥 Drag & Drop files from Finder / Explorer here...", true);
+        DragDrop::EnableFileDrop(dropZone, [this, dropZone](const std::vector<wxString>& files) {
+            wxString content = wxString::Format("🎉 Dropped %zu file(s):\n", files.size());
+            for (const auto& file : files) {
+                content += " • " + file + "\n";
             }
+            dropZone->SetValue(content);
+            Toast::Success(this, wxString::Format("Loaded %zu dropped files", files.size()));
         });
-
-        auto* debouncedLabel = Widgets::Label(panel, "Debounced search query: [none]");
-        auto debouncedHandler = Timer::Debounce<wxString>(400, [debouncedLabel](wxString query) {
-            debouncedLabel->SetLabel("Debounced query (delayed 400ms): " + query);
-        });
-
-        auto* searchInput = Widgets::TextInput(panel, "", "Type fast to test debouncing...", 0,
-            [debouncedHandler](const wxString& val) mutable {
-                debouncedHandler(val);
-            });
 
         Layout::VBox()
             .Add(header, 0, wxALIGN_LEFT | wxALL, 8)
-            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxBOTTOM, 12)
-            .Add(statusLabel, 0, wxLEFT | wxBOTTOM, 8)
-            .Add(progressBar, 0, wxEXPAND | wxALL, 8)
-            .Add(startAsyncBtn, 0, wxALIGN_LEFT | wxALL, 8)
-            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxTOP | wxBOTTOM, 12)
-            .Add(timerLabel, 0, wxLEFT | wxBOTTOM, 8)
-            .Add(toggleTimerBtn, 0, wxALIGN_LEFT | wxALL, 8)
-            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxTOP | wxBOTTOM, 12)
-            .Add(Widgets::Label(panel, "Debounced Search Input (fires only after you stop typing):"), 0, wxLEFT, 8)
-            .Add(searchInput, 0, wxEXPAND | wxALL, 8)
-            .Add(debouncedLabel, 0, wxLEFT | wxBOTTOM, 8)
-            .Stretch()
+            .Add(
+                Layout::HBox()
+                    .Add(btnInfo, 1, wxRIGHT, 4)
+                    .Add(btnSuccess, 1, wxLEFT | wxRIGHT, 4)
+                    .Add(btnWarn, 1, wxLEFT | wxRIGHT, 4)
+                    .Add(btnErr, 1, wxLEFT, 4),
+                0, wxEXPAND | wxALL, 8
+            )
+            .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxTOP | wxBOTTOM, 10)
+            .Add(Widgets::Label(panel, "Interactive Drop Target Area:"), 0, wxLEFT, 8)
+            .Add(dropZone, 1, wxEXPAND | wxALL, 8)
             .ApplyTo(panel);
 
         return panel;
     }
 
-    // TAB 5: List View & Context Menu
+    // TAB 5: TreeCtrl & Background TaskQueue
+    wxWindow* CreateTreeAndTasksTab(wxWindow* parent) {
+        auto* panel = new wxPanel(parent);
+
+        auto* header = Widgets::HeaderLabel(panel, "Hierarchical Tree & Background TaskQueue");
+        
+        auto treeBuilder = Tree::Create(panel)
+            .SetRoot("wxHelpers Project")
+            .AddChild("include/wxHelpers", [](Tree::NodeBuilder& inc) {
+                inc.AddChild("Observable.hpp");
+                inc.AddChild("Animation.hpp");
+                inc.AddChild("Toast.hpp");
+                inc.AddChild("DragDrop.hpp");
+                inc.AddChild("TaskQueue.hpp");
+            })
+            .AddChild("src", [](Tree::NodeBuilder& src) {
+                src.AddChild("main.cpp");
+            })
+            .AddChild("build", [](Tree::NodeBuilder& bld) {
+                bld.AddChild("CMakeLists.txt");
+            })
+            .ExpandAll()
+            .OnSelect([this](const wxString& text, const wxTreeItemId&) {
+                Toast::Info(this, "Tree node selected: " + text, 1500);
+            });
+
+        auto* treeCtrl = treeBuilder.GetTreeCtrl();
+
+        auto* taskStatus = Widgets::Label(panel, "Task Queue: Idle (0 jobs)");
+        auto* enqueueBtn = Widgets::Button(panel, "⚡ Enqueue Background Task", [this, taskStatus]() {
+            static int taskId = 0;
+            int currentId = ++taskId;
+
+            taskStatus->SetLabel(wxString::Format("Task Queue: Running Job #%d (Pending: %zu)", currentId, Tasks::GlobalQueue().PendingTasks()));
+
+            Tasks::GlobalQueue().Enqueue(
+                [currentId]() -> wxString {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+                    return wxString::Format("Job #%d finished in background worker!", currentId);
+                },
+                [this, taskStatus](wxString result) {
+                    taskStatus->SetLabel(result);
+                    Toast::Success(this, result);
+                }
+            );
+        });
+
+        Layout::VBox()
+            .Add(header, 0, wxALIGN_LEFT | wxALL, 8)
+            .Add(treeCtrl, 1, wxEXPAND | wxALL, 8)
+            .Add(
+                Layout::HBox()
+                    .Add(enqueueBtn, 0, wxRIGHT, 10)
+                    .Add(taskStatus, 1, wxALIGN_CENTER_VERTICAL),
+                0, wxEXPAND | wxALL, 8
+            )
+            .ApplyTo(panel);
+
+        return panel;
+    }
+
+    // TAB 6: List View & Context Menu
     wxWindow* CreateListViewTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -366,11 +408,12 @@ private:
                         Dialogs::ShowInfo(this, "Task: " + (data.size() > 1 ? data[1] : "") + "\nStatus: " + (data.size() > 3 ? data[3] : ""));
                     }
                 })
-                .Item("Copy Task Name", [listBuilder, sel]() {
+                .Item("Copy Task Name", [this, listBuilder, sel]() {
                     if (sel >= 0) {
                         auto data = listBuilder.GetRowData(sel);
                         if (data.size() > 1) {
                             Clipboard::SetText(data[1]);
+                            Toast::Info(this, "Copied: " + data[1]);
                         }
                     }
                 })
@@ -392,7 +435,7 @@ private:
         return panel;
     }
 
-    // TAB 6: System, Paths & Dialogs
+    // TAB 7: System, Paths & Dialogs
     wxWindow* CreateSystemDialogsTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -408,7 +451,7 @@ private:
 
         auto* btnFolder = Widgets::Button(panel, "📁 Choose Directory", [this]() {
             if (auto dir = Dialogs::PickDirectory(this); dir) {
-                Dialogs::ShowInfo(this, "Directory: " + *dir);
+                Toast::Success(this, "Directory: " + *dir);
             }
         });
 
@@ -419,7 +462,7 @@ private:
 
         auto* btnAsk = Widgets::Button(panel, "❓ Confirmation Dialog", [this]() {
             bool yes = Dialogs::AskYesNo(this, "Do you love modern C++ with wxWidgets?");
-            Dialogs::ShowInfo(this, yes ? "Awesome! 🚀" : "Keep exploring!");
+            Toast::Info(this, yes ? "Awesome! 🚀" : "Keep exploring!");
         });
 
         Layout::VBox()
@@ -445,10 +488,6 @@ private:
     // Canvas & Animation State
     double m_animProgress = 0.6;
     wxPoint m_mousePos{100, 100};
-
-    // Timer State
-    std::shared_ptr<Timer::IntervalHandle> m_interval;
-    int m_timerTicks = 0;
 };
 
 class App : public wxApp {
