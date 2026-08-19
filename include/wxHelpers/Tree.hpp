@@ -73,10 +73,24 @@ public:
 
     TreeCtrlBuilder& OnSelect(std::function<void(const wxString& text, const wxTreeItemId& id)> handler) {
         if (m_tree && handler) {
-            m_tree->Bind(wxEVT_TREE_SEL_CHANGED, [this, handler = std::move(handler)](wxTreeEvent& event) {
+            auto* tree = m_tree;
+            m_tree->Bind(wxEVT_TREE_SEL_CHANGED, [tree, handler = std::move(handler)](wxTreeEvent& event) {
                 wxTreeItemId item = event.GetItem();
                 if (item.IsOk()) {
-                    handler(m_tree->GetItemText(item), item);
+                    handler(tree->GetItemText(item), item);
+                }
+            });
+        }
+        return *this;
+    }
+
+    TreeCtrlBuilder& OnItemActivated(std::function<void(const wxString& text, const wxTreeItemId& id)> handler) {
+        if (m_tree && handler) {
+            auto* tree = m_tree;
+            m_tree->Bind(wxEVT_TREE_ITEM_ACTIVATED, [tree, handler = std::move(handler)](wxTreeEvent& event) {
+                wxTreeItemId item = event.GetItem();
+                if (item.IsOk()) {
+                    handler(tree->GetItemText(item), item);
                 }
             });
         }

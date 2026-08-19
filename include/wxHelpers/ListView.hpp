@@ -36,7 +36,7 @@ public:
 
     ListCtrlBuilder& OnSelect(std::function<void(long rowIndex)> handler) {
         if (m_listCtrl && handler) {
-            m_listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED, [this, handler = std::move(handler)](wxListEvent& event) {
+            m_listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED, [handler = std::move(handler)](wxListEvent& event) {
                 handler(event.GetIndex());
             });
         }
@@ -45,25 +45,30 @@ public:
 
     ListCtrlBuilder& OnItemActivated(std::function<void(long rowIndex)> handler) {
         if (m_listCtrl && handler) {
-            m_listCtrl->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this, handler = std::move(handler)](wxListEvent& event) {
+            m_listCtrl->Bind(wxEVT_LIST_ITEM_ACTIVATED, [handler = std::move(handler)](wxListEvent& event) {
                 handler(event.GetIndex());
             });
         }
         return *this;
     }
 
-    std::vector<wxString> GetRowData(long rowIndex) const {
+    static std::vector<wxString> GetRowData(wxListCtrl* listCtrl, long rowIndex) {
         std::vector<wxString> data;
-        int colCount = m_listCtrl->GetColumnCount();
+        if (!listCtrl) return data;
+        int colCount = listCtrl->GetColumnCount();
         for (int col = 0; col < colCount; ++col) {
             wxListItem item;
             item.SetId(rowIndex);
             item.SetColumn(col);
             item.SetMask(wxLIST_MASK_TEXT);
-            m_listCtrl->GetItem(item);
+            listCtrl->GetItem(item);
             data.push_back(item.GetText());
         }
         return data;
+    }
+
+    std::vector<wxString> GetRowData(long rowIndex) const {
+        return GetRowData(m_listCtrl, rowIndex);
     }
 
     wxListCtrl* GetListCtrl() const { return m_listCtrl; }

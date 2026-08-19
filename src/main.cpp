@@ -399,18 +399,18 @@ private:
 
         auto* listCtrl = listBuilder.GetListCtrl();
 
-        listCtrl->Bind(wxEVT_CONTEXT_MENU, [this, panel, listCtrl, listBuilder](wxContextMenuEvent& evt) {
+        listCtrl->Bind(wxEVT_CONTEXT_MENU, [this, panel, listCtrl](wxContextMenuEvent& evt) {
             long sel = listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
             Menu::Context()
-                .Item("View Details", [this, listBuilder, sel]() {
+                .Item("View Details", [this, listCtrl, sel]() {
                     if (sel >= 0) {
-                        auto data = listBuilder.GetRowData(sel);
+                        auto data = ListView::ListCtrlBuilder::GetRowData(listCtrl, sel);
                         Dialogs::ShowInfo(this, "Task: " + (data.size() > 1 ? data[1] : "") + "\nStatus: " + (data.size() > 3 ? data[3] : ""));
                     }
                 })
-                .Item("Copy Task Name", [this, listBuilder, sel]() {
+                .Item("Copy Task Name", [this, listCtrl, sel]() {
                     if (sel >= 0) {
-                        auto data = listBuilder.GetRowData(sel);
+                        auto data = ListView::ListCtrlBuilder::GetRowData(listCtrl, sel);
                         if (data.size() > 1) {
                             Clipboard::SetText(data[1]);
                             Toast::Info(this, "Copied: " + data[1]);
