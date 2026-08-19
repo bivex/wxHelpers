@@ -151,18 +151,15 @@ private:
         auto* canvas = Canvas::Create(panel, wxSize(400, 220));
         
         canvas->OnPaint([this](wxDC& dc, const wxSize& size) {
-            // Background gradient
             Canvas::Draw::GradientRect(dc, wxRect(0, 0, size.x, size.y), 
                                        Color::Palette::Slate900, Color::Palette::Slate800);
 
-            // Animated pill box
             int boxWidth = static_cast<int>(m_animProgress * (size.x - 60));
             wxRect cardRect(30, 40, std::max(60, boxWidth), 60);
             Canvas::Draw::RoundedRect(dc, cardRect, 12, Color::Palette::Blue500, Color::Palette::Slate200);
             Canvas::Draw::CenteredText(dc, wxString::Format("Tween Progress: %d%%", static_cast<int>(m_animProgress * 100)),
                                        cardRect, *wxWHITE, 11, true);
 
-            // Interactive mouse circle
             dc.SetBrush(wxBrush(Color::Palette::Emerald500));
             dc.SetPen(wxPen(*wxWHITE, 2));
             dc.DrawCircle(m_mousePos, 14);
@@ -264,7 +261,7 @@ private:
         return panel;
     }
 
-    // TAB 4: Toasts & Drag and Drop
+    // TAB 4: Toasts & Interactive Drag and Drop Zone
     wxWindow* CreateDragDropToastTab(wxWindow* parent) {
         auto* panel = new wxPanel(parent);
 
@@ -284,15 +281,10 @@ private:
             Toast::Error(this, "Critical error encountered!");
         });
 
-        // Drag and Drop Zone
-        auto* dropZone = Widgets::TextArea(panel, "📥 Drag & Drop files from Finder / Explorer here...", true);
-        DragDrop::EnableFileDrop(dropZone, [this, dropZone](const std::vector<wxString>& files) {
-            wxString content = wxString::Format("🎉 Dropped %zu file(s):\n", files.size());
-            for (const auto& file : files) {
-                content += " • " + file + "\n";
-            }
-            dropZone->SetValue(content);
-            Toast::Success(this, wxString::Format("Loaded %zu dropped files", files.size()));
+        // Interactive Drop Zone
+        auto* dropZone = DragDrop::CreateDropZone(panel, "Drag & Drop files from Finder / Explorer here, or click to browse", wxSize(-1, 200));
+        dropZone->OnFiles([this](const std::vector<wxString>& files) {
+            Toast::Success(this, wxString::Format("Loaded %zu dropped files!", files.size()));
         });
 
         Layout::VBox()
@@ -306,7 +298,7 @@ private:
                 0, wxEXPAND | wxALL, 8
             )
             .Add(Widgets::HorizontalDivider(panel), 0, wxEXPAND | wxTOP | wxBOTTOM, 10)
-            .Add(Widgets::Label(panel, "Interactive Drop Target Area:"), 0, wxLEFT, 8)
+            .Add(Widgets::Label(panel, "Drop Target Box (Click to Browse / Drag files into):"), 0, wxLEFT, 8)
             .Add(dropZone, 1, wxEXPAND | wxALL, 8)
             .ApplyTo(panel);
 
