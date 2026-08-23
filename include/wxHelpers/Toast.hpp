@@ -66,7 +66,7 @@ public:
             
             // Draw rounded toast background
             Canvas::Draw::RoundedRect(paintDC, wxRect(0, 0, sz.x, sz.y), 8, bgColor);
-            Canvas::Draw::CenteredText(paintDC, m_message, wxRect(0, 0, sz.x, sz.y), fgColor, 11, true);
+            Canvas::Draw::CenteredText(paintDC, m_message, wxRect(0, 0, sz.x, sz.y), fgColor, Canvas::Draw::TextStyle{11, true});
         });
 
         // Click on toast to dismiss immediately

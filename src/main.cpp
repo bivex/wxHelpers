@@ -257,7 +257,7 @@ private:
             wxRect cardRect(30, 40, std::max(60, boxWidth), 60);
             Canvas::Draw::RoundedRect(dc, cardRect, 12, Color::Palette::Blue500, Color::Palette::Slate200);
             Canvas::Draw::CenteredText(dc, wxString::Format("Tween Progress: %d%%", static_cast<int>(m_animProgress * 100)),
-                                       cardRect, *wxWHITE, 11, true);
+                                       cardRect, *wxWHITE, Canvas::Draw::TextStyle{11, true});
 
             dc.SetBrush(wxBrush(Color::Palette::Emerald500));
             dc.SetPen(wxPen(*wxWHITE, 2));

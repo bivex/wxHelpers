@@ -101,10 +101,15 @@ inline void RoundedRect(wxDC& dc, const wxRect& rect, double radius, const wxCol
     dc.DrawRoundedRectangle(rect, radius);
 }
 
-inline void CenteredText(wxDC& dc, const wxString& text, const wxRect& rect, const wxColour& color, int pointSize = 10, bool bold = false) {
+struct TextStyle {
+    int pointSize = 10;
+    bool bold = false;
+};
+
+inline void CenteredText(wxDC& dc, const wxString& text, const wxRect& rect, const wxColour& color, TextStyle style = {}) {
     wxFont font = dc.GetFont();
-    font.SetPointSize(pointSize);
-    if (bold) font.SetWeight(wxFONTWEIGHT_BOLD);
+    font.SetPointSize(style.pointSize);
+    if (style.bold) font.SetWeight(wxFONTWEIGHT_BOLD);
     dc.SetFont(font);
     dc.SetTextForeground(color);
 
