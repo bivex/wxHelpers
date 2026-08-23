@@ -25,11 +25,15 @@ inline wxColour FromHex(const wxString& hexStr) {
 
     unsigned long r = 0, g = 0, b = 0, a = 255;
     if (hex.length() >= 6) {
-        hex.Mid(0, 2).ToULong(&r, 16);
-        hex.Mid(2, 2).ToULong(&g, 16);
-        hex.Mid(4, 2).ToULong(&b, 16);
+        wxString rPart = hex.Mid(0, 2);
+        wxString gPart = hex.Mid(2, 2);
+        wxString bPart = hex.Mid(4, 2);
+        rPart.ToULong(&r, 16);
+        gPart.ToULong(&g, 16);
+        bPart.ToULong(&b, 16);
         if (hex.length() == 8) {
-            hex.Mid(6, 2).ToULong(&a, 16);
+            wxString aPart = hex.Mid(6, 2);
+            aPart.ToULong(&a, 16);
         }
     }
     return wxColour(static_cast<unsigned char>(r),
