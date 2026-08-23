@@ -18,6 +18,16 @@ enum class Type {
     Error
 };
 
+inline wxColour GetToastColor(Type type) {
+    switch (type) {
+        case Type::Success: return Color::Palette::Emerald500;
+        case Type::Warning: return Color::Palette::Amber500;
+        case Type::Error:   return Color::Palette::Rose500;
+        case Type::Info:
+        default:            return Color::Palette::Blue600;
+    }
+}
+
 class ToastPopup : public wxPanel {
 public:
     ToastPopup(wxWindow* parent, const wxString& message, Type type, int durationMs = 3000)
@@ -26,24 +36,8 @@ public:
         
         SetBackgroundStyle(wxBG_STYLE_PAINT);
 
-        wxColour bgColor;
+        wxColour bgColor = GetToastColor(type);
         wxColour fgColor = *wxWHITE;
-
-        switch (type) {
-            case Type::Success:
-                bgColor = Color::Palette::Emerald500;
-                break;
-            case Type::Warning:
-                bgColor = Color::Palette::Amber500;
-                break;
-            case Type::Error:
-                bgColor = Color::Palette::Rose500;
-                break;
-            case Type::Info:
-            default:
-                bgColor = Color::Palette::Blue600;
-                break;
-        }
 
         // Calculate size based on text length
         wxClientDC dc(parent);

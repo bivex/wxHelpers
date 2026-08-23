@@ -41,9 +41,7 @@ public:
         MenuBuilder sub(title);
         subMenuConfig(sub);
         m_menu->AppendSubMenu(sub.GetMenu(), title);
-        
-        m_actions.insert(m_actions.end(), sub.m_actions.begin(), sub.m_actions.end());
-        m_toggleActions.insert(m_toggleActions.end(), sub.m_toggleActions.begin(), sub.m_toggleActions.end());
+        sub.MergeActionsInto(m_actions, m_toggleActions);
         return *this;
     }
 
@@ -82,6 +80,12 @@ public:
     wxMenu* GetMenu() const { return m_menu; }
     const wxString& GetTitle() const { return m_title; }
 
+    void MergeActionsInto(std::vector<std::pair<int, std::function<void()>>>& outActions,
+                          std::vector<std::pair<int, std::function<void(bool)>>>& outToggleActions) const {
+        outActions.insert(outActions.end(), m_actions.begin(), m_actions.end());
+        outToggleActions.insert(outToggleActions.end(), m_toggleActions.begin(), m_toggleActions.end());
+    }
+
     const std::vector<std::pair<int, std::function<void()>>>& GetActions() const { return m_actions; }
     const std::vector<std::pair<int, std::function<void(bool)>>>& GetToggleActions() const { return m_toggleActions; }
 
@@ -101,8 +105,7 @@ public:
         menuConfig(builder);
         m_menuBar->Append(builder.GetMenu(), title);
         
-        m_actions.insert(m_actions.end(), builder.GetActions().begin(), builder.GetActions().end());
-        m_toggleActions.insert(m_toggleActions.end(), builder.GetToggleActions().begin(), builder.GetToggleActions().end());
+        builder.MergeActionsInto(m_actions, m_toggleActions);
         return *this;
     }
 

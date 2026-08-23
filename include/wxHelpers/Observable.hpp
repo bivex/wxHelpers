@@ -38,10 +38,10 @@ public:
 
     size_t Subscribe(Listener listener, bool immediateNotify = false) {
         size_t id = ++m_nextId;
-        m_listeners.emplace_back(id, std::move(listener));
-        if (immediateNotify) {
-            m_listeners.back().second(m_value, m_value);
+        if (immediateNotify && listener) {
+            listener(m_value, m_value);
         }
+        m_listeners.emplace_back(id, std::move(listener));
         return id;
     }
 

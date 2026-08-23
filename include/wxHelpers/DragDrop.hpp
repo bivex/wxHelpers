@@ -5,6 +5,7 @@
 #include <wx/dcbuffer.h>
 #include <wx/filedlg.h>
 #include "Color.hpp"
+#include "Dialogs.hpp"
 #include <functional>
 #include <vector>
 
@@ -112,16 +113,8 @@ public:
 
         // Click to open file dialog fallback
         Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) {
-            wxFileDialog openFileDialog(this, "Select files to open", "", "",
-                                       wxFileSelectorDefaultWildcardStr, 
-                                       wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE);
-            if (openFileDialog.ShowModal() == wxID_OK) {
-                wxArrayString paths;
-                openFileDialog.GetPaths(paths);
-                std::vector<wxString> files;
-                for (const auto& p : paths) {
-                    files.push_back(p);
-                }
+            auto files = Dialogs::PickMultipleFiles(this, "Select files to open");
+            if (!files.empty()) {
                 m_droppedFiles = files;
                 Refresh();
                 if (m_onFilesDropped) {
