@@ -81,11 +81,33 @@ inline void SetTimeout(int milliseconds, std::function<void()> callback) {
     timer->StartOnce(milliseconds);
 }
 
+// Execute callback once after delay with automatic weak reference lifetime safeguard
+template <typename TWindow, typename Fn>
+inline void SetTimeout(TWindow* context, int milliseconds, Fn&& callback) {
+    wxWeakRef<TWindow> weakRef(context);
+    SetTimeout(milliseconds, [weakRef, cb = std::forward<Fn>(callback)]() {
+        if (weakRef) {
+            cb(weakRef.get());
+        }
+    });
+}
+
 // Execute callback repeatedly every interval in milliseconds
 inline std::shared_ptr<IntervalHandle> SetInterval(int milliseconds, std::function<void()> callback) {
     auto* timer = new LambdaTimer(std::move(callback), false);
     timer->Start(milliseconds);
     return std::make_shared<IntervalHandle>(timer);
+}
+
+// Execute callback repeatedly with automatic weak reference lifetime safeguard
+template <typename TWindow, typename Fn>
+inline std::shared_ptr<IntervalHandle> SetInterval(TWindow* context, int milliseconds, Fn&& callback) {
+    wxWeakRef<TWindow> weakRef(context);
+    return SetInterval(milliseconds, [weakRef, cb = std::forward<Fn>(callback)]() {
+        if (weakRef) {
+            cb(weakRef.get());
+        }
+    });
 }
 
 // Returns a debounced version of a callable that delays execution until after `delayMs` has elapsed

@@ -15,6 +15,37 @@ enum class Style {
     Neutral
 };
 
+struct BadgeColorScheme {
+    wxColour bg;
+    wxColour fg;
+    wxColour dotColor;
+};
+
+inline BadgeColorScheme GetBadgeColors(Style style) {
+    switch (style) {
+        case Style::Success:
+            return { Color::FromHex("#064E3B"), Color::FromHex("#6EE7B7"), Color::Palette::Emerald500 };
+        case Style::Warning:
+            return { Color::FromHex("#78350F"), Color::FromHex("#FDE68A"), Color::Palette::Amber500 };
+        case Style::Error:
+            return { Color::FromHex("#881337"), Color::FromHex("#FECDD3"), Color::Palette::Rose500 };
+        case Style::Neutral:
+            return { Color::Palette::Slate800, Color::Palette::Slate200, Color::Palette::Slate500 };
+        case Style::Info:
+        default:
+            return { Color::FromHex("#1E3A8A"), Color::FromHex("#BFDBFE"), Color::Palette::Blue500 };
+    }
+}
+
+struct BadgeMetrics {
+    int padLeft = 24;
+    int padRight = 12;
+    int minHeight = 22;
+    int padV = 8;
+    int dotRadius = 4;
+    int dotX = 10;
+};
+
 class BadgeWidget : public wxPanel {
 public:
     BadgeWidget(wxWindow* parent, const wxString& text, Style style = Style::Info)
@@ -29,55 +60,25 @@ public:
             dc.Clear();
             wxSize sz = GetClientSize();
 
-            wxColour bg, fg, dotColor;
-            switch (m_style) {
-                case Style::Success:
-                    bg = Color::FromHex("#064E3B"); // Dark green bg
-                    fg = Color::FromHex("#6EE7B7"); // Light green text
-                    dotColor = Color::Palette::Emerald500;
-                    break;
-                case Style::Warning:
-                    bg = Color::FromHex("#78350F");
-                    fg = Color::FromHex("#FDE68A");
-                    dotColor = Color::Palette::Amber500;
-                    break;
-                case Style::Error:
-                    bg = Color::FromHex("#881337");
-                    fg = Color::FromHex("#FECDD3");
-                    dotColor = Color::Palette::Rose500;
-                    break;
-                case Style::Neutral:
-                    bg = Color::Palette::Slate800;
-                    fg = Color::Palette::Slate200;
-                    dotColor = Color::Palette::Slate500;
-                    break;
-                case Style::Info:
-                default:
-                    bg = Color::FromHex("#1E3A8A");
-                    fg = Color::FromHex("#BFDBFE");
-                    dotColor = Color::Palette::Blue500;
-                    break;
-            }
+            BadgeColorScheme colors = GetBadgeColors(m_style);
 
             // Draw pill capsule
-            Canvas::Draw::RoundedRect(dc, wxRect(0, 0, sz.x, sz.y), sz.y / 2.0, bg);
+            Canvas::Draw::RoundedRect(dc, wxRect(0, 0, sz.x, sz.y), sz.y / 2.0, colors.bg);
 
             // Draw status dot indicator
-            int dotRadius = 4;
-            int dotX = 10;
             int dotY = sz.y / 2;
-            dc.SetBrush(wxBrush(dotColor));
+            dc.SetBrush(wxBrush(colors.dotColor));
             dc.SetPen(*wxTRANSPARENT_PEN);
-            dc.DrawCircle(dotX, dotY, dotRadius);
+            dc.DrawCircle(m_metrics.dotX, dotY, m_metrics.dotRadius);
 
             // Draw text
             wxFont font = GetFont();
             font.SetPointSize(9);
             font.SetWeight(wxFONTWEIGHT_BOLD);
             dc.SetFont(font);
-            dc.SetTextForeground(fg);
+            dc.SetTextForeground(colors.fg);
             wxSize txtSize = dc.GetTextExtent(m_text);
-            dc.DrawText(m_text, dotX + dotRadius + 6, (sz.y - txtSize.y) / 2);
+            dc.DrawText(m_text, m_metrics.dotX + m_metrics.dotRadius + 6, (sz.y - txtSize.y) / 2);
         });
     }
 
@@ -101,16 +102,17 @@ private:
         dc.SetFont(font);
         wxSize txtSize = dc.GetTextExtent(m_text);
 
-        int padLeft = 24;
-        int padRight = 12;
-        int width = txtSize.x + padLeft + padRight;
-        int height = std::max(22, txtSize.y + 8);
-        SetMinSize(wxSize(width, height));
-        SetSize(width, height);
+        wxSize finalSize(
+            txtSize.x + m_metrics.padLeft + m_metrics.padRight,
+            std::max(m_metrics.minHeight, txtSize.y + m_metrics.padV)
+        );
+        SetMinSize(finalSize);
+        SetSize(finalSize);
     }
 
     wxString m_text;
     Style m_style;
+    BadgeMetrics m_metrics;
 };
 
 inline BadgeWidget* Create(wxWindow* parent, const wxString& text, Style style = Style::Info) {
