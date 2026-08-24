@@ -4,7 +4,9 @@
 #include <vector>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class DragDropToastTab : public wxPanel {
 public:
@@ -52,4 +54,4 @@ inline wxWindow* CreateDragDropToastTab(wxWindow* parent) {
     return new DragDropToastTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

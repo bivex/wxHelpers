@@ -5,7 +5,9 @@
 #include <vector>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class ChartsAndSearchTab : public wxPanel {
 public:
@@ -100,4 +102,4 @@ inline wxWindow* CreateChartsAndSearchTab(wxWindow* parent) {
     return new ChartsAndSearchTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

@@ -3,7 +3,9 @@
 #include <wx/wx.h>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class ReactiveBindingTab : public wxPanel {
 public:
@@ -64,4 +66,4 @@ inline wxWindow* CreateReactiveBindingTab(wxWindow* parent) {
     return new ReactiveBindingTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

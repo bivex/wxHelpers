@@ -3,7 +3,9 @@
 #include <wx/wx.h>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class SystemDialogsTab : public wxPanel {
 public:
@@ -52,4 +54,4 @@ inline wxWindow* CreateSystemDialogsTab(wxWindow* parent) {
     return new SystemDialogsTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

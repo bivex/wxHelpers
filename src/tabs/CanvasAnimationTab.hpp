@@ -3,7 +3,9 @@
 #include <wx/wx.h>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class CanvasAnimationTab : public wxPanel {
 public:
@@ -73,4 +75,4 @@ inline wxWindow* CreateCanvasAnimationTab(wxWindow* parent) {
     return new CanvasAnimationTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

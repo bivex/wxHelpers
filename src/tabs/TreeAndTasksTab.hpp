@@ -5,7 +5,9 @@
 #include <thread>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class TreeAndTasksTab : public wxPanel {
 public:
@@ -73,4 +75,4 @@ inline wxWindow* CreateTreeAndTasksTab(wxWindow* parent) {
     return new TreeAndTasksTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

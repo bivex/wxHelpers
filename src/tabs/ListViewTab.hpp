@@ -3,7 +3,9 @@
 #include <wx/wx.h>
 #include "wxHelpers/wxHelpers.hpp"
 
-namespace wxHelpers::Demo {
+namespace Demo {
+using namespace wxHelpers;
+
 
 class ListViewTab : public wxPanel {
 public:
@@ -68,4 +70,4 @@ inline wxWindow* CreateListViewTab(wxWindow* parent) {
     return new ListViewTab(parent);
 }
 
-} // namespace wxHelpers::Demo
+} // namespace Demo

@@ -12,7 +12,7 @@
 #include "tabs/SystemDialogsTab.hpp"
 
 using namespace wxHelpers;
-using namespace wxHelpers::Demo;
+using namespace Demo;
 
 class DemoFrame : public wxFrame {
 public:
